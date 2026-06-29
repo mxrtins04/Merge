@@ -1,0 +1,45 @@
+# Maven files
+target/
+*.pom
+*.jar
+*.war
+*.ear
+.mbox
+.settings/
+.classpath
+.project
+.factorypath
+
+# Node/Vite files
+node_modules/
+dist/
+dist-ssr/
+*.local
+.eslintcache
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.idea/
+*.iml
+*.iws
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Environment files
+.env
+.env.production
+.env.development
+
+# Redis/Docker data
+redis_data/

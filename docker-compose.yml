@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - JUDGE0_URL=http://judge0:2358
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - redis
+      - judge0
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - backend
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  judge0:
+    image: judge0/judge0:latest
+    ports:
+      - "2538:2358" # Maps external 2538 to internal 2358 to avoid host conflicts
+    environment:
+      - REDIS_URL=redis://judge0-redis:6379
+      - DATABASE_URL=postgres://judge0:judge0@judge0-db:5432/judge0
+      - ENABLE_NETWORK=false
+      - CPU_TIME_LIMIT=2
+      - MEMORY_LIMIT=262144
+    depends_on:
+      - judge0-db
+      - judge0-redis
+
+  judge0-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: judge0
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: judge0
+
+  judge0-redis:
+    image: redis:7-alpine
+
+volumes:
+  redis_data:
