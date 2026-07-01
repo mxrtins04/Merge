@@ -99,4 +99,74 @@ public class ScoutServiceImpl implements ScoutService {
                 assessment.getLayer2SubmittedAt()
         );
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Layer3TaskResponse getLayer3Task(String studentEmail) {
+        Student student = studentRepository.findByEmail(studentEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Student not found: " + studentEmail));
+
+        ScoutAssessment assessment = assessmentRepository.findByStudentId(student.getId())
+                .orElseThrow(() -> new NoLayer1SubmissionException("Layer 1 must be completed before accessing Layer 3"));
+
+        if (assessment.getLayer2Results() == null) {
+            throw new NoLayer1SubmissionException("Layer 2 must be completed before accessing Layer 3");
+        }
+
+        if (!hasPriorCodingExperience(assessment)) {
+            return Layer3TaskResponse.notEligible();
+        }
+
+        return new Layer3TaskResponse(
+                true,
+                LAYER_3_TASK_ID,
+                LAYER_3_TASK_TITLE,
+                LAYER_3_TASK_DESCRIPTION,
+                LAYER_3_EXAMPLE_INPUT,
+                LAYER_3_EXAMPLE_OUTPUT
+        );
+    }
+
+    @Override
+    public Layer3SubmitResponse submitLayer3(String studentEmail, Layer3SubmitRequest request) {
+        Student student = studentRepository.findByEmail(studentEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Student not found: " + studentEmail));
+
+        ScoutAssessment assessment = assessmentRepository.findByStudentId(student.getId())
+                .orElseThrow(() -> new NoLayer1SubmissionException("Layer 1 must be completed before submitting Layer 3"));
+
+        if (assessment.getLayer2Results() == null) {
+            throw new NoLayer1SubmissionException("Layer 2 must be completed before submitting Layer 3");
+        }
+
+        if (!hasPriorCodingExperience(assessment)) {
+            return new Layer3SubmitResponse(assessment.getId(), student.getId(), true, assessment.getSubmittedAt());
+        }
+
+        assessment.setLayer3Code(request.code());
+        assessmentRepository.save(assessment);
+
+        return new Layer3SubmitResponse(assessment.getId(), student.getId(), false, assessment.getSubmittedAt());
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────────
+
+    /**
+     * A q4 answer longer than 15 characters indicates the student described experience they have.
+     * Short answers ("No.", "Never", "Not really.") fall below the threshold and are treated as
+     * no prior experience.
+     */
+    private boolean hasPriorCodingExperience(ScoutAssessment assessment) {
+        String q4 = assessment.getLayer1Responses().getOrDefault("q4", "").strip();
+        return q4.length() > 15;
+    }
+
+    private static final String LAYER_3_TASK_ID          = "baseline-filter-evens";
+    private static final String LAYER_3_TASK_TITLE        = "Filter Even Numbers";
+    private static final String LAYER_3_TASK_DESCRIPTION  = """
+            Write a function that accepts a list of integers and returns only the even numbers \
+            from that list, preserving their original order. If the input list is empty, return \
+            an empty list. Use any programming language you are comfortable with.""";
+    private static final String LAYER_3_EXAMPLE_INPUT     = "[1, 2, 3, 4, 5, 6]";
+    private static final String LAYER_3_EXAMPLE_OUTPUT    = "[2, 4, 6]";
 }
