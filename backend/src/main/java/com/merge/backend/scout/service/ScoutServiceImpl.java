@@ -2,6 +2,7 @@ package com.merge.backend.scout.service;
 
 import com.merge.backend.identity.domain.Student;
 import com.merge.backend.identity.repository.StudentRepository;
+import com.merge.backend.personalisation.service.ScoutAttributeDerivationService;
 import com.merge.backend.scout.domain.ScoutAssessment;
 import com.merge.backend.scout.dto.*;
 import com.merge.backend.scout.repository.ScoutAssessmentRepository;
@@ -35,11 +36,14 @@ public class ScoutServiceImpl implements ScoutService {
 
     private final ScoutAssessmentRepository assessmentRepository;
     private final StudentRepository studentRepository;
+    private final ScoutAttributeDerivationService derivationService;
 
     public ScoutServiceImpl(ScoutAssessmentRepository assessmentRepository,
-                            StudentRepository studentRepository) {
+                            StudentRepository studentRepository,
+                            ScoutAttributeDerivationService derivationService) {
         this.assessmentRepository = assessmentRepository;
         this.studentRepository = studentRepository;
+        this.derivationService = derivationService;
     }
 
     @Override
@@ -61,6 +65,11 @@ public class ScoutServiceImpl implements ScoutService {
         assessment.setStudent(student);
         assessment.setLayer1Responses(request.responses());
         assessment = assessmentRepository.save(assessment);
+
+        // Students with no prior experience skip Layer 3 — scout is complete after Layer 1.
+        if (!hasPriorCodingExperience(assessment)) {
+            derivationService.derive(assessment);
+        }
 
         return new Layer1SubmitResponse(
                 assessment.getId(),
@@ -144,7 +153,10 @@ public class ScoutServiceImpl implements ScoutService {
         }
 
         assessment.setLayer3Code(request.code());
-        assessmentRepository.save(assessment);
+        assessment = assessmentRepository.save(assessment);
+
+        // Scout is now complete for this student — derive attributes and write initial profile.
+        derivationService.derive(assessment);
 
         return new Layer3SubmitResponse(assessment.getId(), student.getId(), false, assessment.getSubmittedAt());
     }
