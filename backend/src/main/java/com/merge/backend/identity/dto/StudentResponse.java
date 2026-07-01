@@ -19,6 +19,7 @@ public class StudentResponse {
     private Integer totalXp;
     private String githubPortfolioRepo;
     private boolean githubConnected;
+    private boolean geminiConnected;
 
     public static StudentResponse from(Student student) {
         StudentResponse dto = new StudentResponse();
@@ -31,6 +32,7 @@ public class StudentResponse {
         dto.setTotalXp(student.getTotalXp());
         dto.setGithubPortfolioRepo(student.getGithubPortfolioRepo());
         dto.setGithubConnected(student.getGithubOauthTokenEncrypted() != null);
+        dto.setGeminiConnected(student.getGeminiTokenEncrypted() != null);
         return dto;
     }
 }
