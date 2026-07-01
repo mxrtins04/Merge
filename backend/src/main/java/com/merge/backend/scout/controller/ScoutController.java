@@ -34,7 +34,7 @@ public class ScoutController {
     }
 
     /**
-     * SC-02: POST /api/v1/scout/layer-1/submit
+     * SC-01: POST /api/v1/scout/layer-1/submit
      * Accepts free-text answers and persists them to scout_assessments.layer1_responses (JSONB).
      * Requires valid JWT. One submission per student.
      */

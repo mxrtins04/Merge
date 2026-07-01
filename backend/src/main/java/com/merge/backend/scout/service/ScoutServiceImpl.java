@@ -66,11 +66,6 @@ public class ScoutServiceImpl implements ScoutService {
         assessment.setLayer1Responses(request.responses());
         assessment = assessmentRepository.save(assessment);
 
-        // Students with no prior experience skip Layer 3 — scout is complete after Layer 1.
-        if (!hasPriorCodingExperience(assessment)) {
-            derivationService.derive(assessment);
-        }
-
         return new Layer1SubmitResponse(
                 assessment.getId(),
                 student.getId(),
@@ -154,9 +149,6 @@ public class ScoutServiceImpl implements ScoutService {
 
         assessment.setLayer3Code(request.code());
         assessment = assessmentRepository.save(assessment);
-
-        // Scout is now complete for this student — derive attributes and write initial profile.
-        derivationService.derive(assessment);
 
         return new Layer3SubmitResponse(assessment.getId(), student.getId(), false, assessment.getSubmittedAt());
     }
