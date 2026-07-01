@@ -38,6 +38,10 @@ public class ScoutAssessment {
     @Column(name = "layer2_submitted_at")
     private Instant layer2SubmittedAt;
 
+    /** Baseline coding task submission — null if student skipped Layer 3 (no prior experience). */
+    @Column(name = "layer3_code", columnDefinition = "text")
+    private String layer3Code;
+
     @PrePersist
     void onPersist() {
         submittedAt = Instant.now();
