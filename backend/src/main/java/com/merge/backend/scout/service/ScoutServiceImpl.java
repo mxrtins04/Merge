@@ -2,6 +2,7 @@ package com.merge.backend.scout.service;
 
 import com.merge.backend.identity.domain.Student;
 import com.merge.backend.identity.repository.StudentRepository;
+import com.merge.backend.personalisation.domain.PersonalisationProfile;
 import com.merge.backend.personalisation.service.ScoutAttributeDerivationService;
 import com.merge.backend.scout.domain.ScoutAssessment;
 import com.merge.backend.scout.dto.*;
@@ -153,6 +154,43 @@ public class ScoutServiceImpl implements ScoutService {
         return new Layer3SubmitResponse(assessment.getId(), student.getId(), false, assessment.getSubmittedAt());
     }
 
+    @Override
+    public ScoutCompleteResponse completeScout(String studentEmail) {
+        Student student = studentRepository.findByEmail(studentEmail)
+                .orElseThrow(() -> new IllegalArgumentException("Student not found: " + studentEmail));
+
+        if (!"SCOUT".equals(student.getCurrentStage())) {
+            throw new AlreadySubmittedException("Scout stage already completed");
+        }
+
+        ScoutAssessment assessment = assessmentRepository.findByStudentId(student.getId())
+                .orElseThrow(() -> new NoLayer1SubmissionException("Layer 1 must be completed before completing Scout"));
+
+        if (assessment.getLayer2Results() == null) {
+            throw new NoLayer1SubmissionException("Layer 2 must be completed before completing Scout");
+        }
+
+        if (hasPriorCodingExperience(assessment) && assessment.getLayer3Code() == null) {
+            throw new NoLayer1SubmissionException("Layer 3 must be completed before completing Scout");
+        }
+
+        PersonalisationProfile profile = derivationService.derive(assessment);
+
+        student.setCurrentStage("CADET");
+        studentRepository.save(student);
+
+        return new ScoutCompleteResponse(
+                student.getId(),
+                student.getCurrentStage(),
+                profile.getThinkingStyle(),
+                profile.getMotivationType(),
+                profile.getPriorExposure(),
+                profile.getLearningApproach(),
+                profile.getScaffoldingLevel(),
+                CADET_REDIRECT_TARGET
+        );
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     /**
@@ -173,4 +211,6 @@ public class ScoutServiceImpl implements ScoutService {
             an empty list. Use any programming language you are comfortable with.""";
     private static final String LAYER_3_EXAMPLE_INPUT     = "[1, 2, 3, 4, 5, 6]";
     private static final String LAYER_3_EXAMPLE_OUTPUT    = "[2, 4, 6]";
+
+    private static final String CADET_REDIRECT_TARGET = "/cadet/dashboard";
 }

@@ -95,6 +95,19 @@ public class ScoutController {
         return ResponseEntity.status(status).body(response);
     }
 
+    /**
+     * SC-05: POST /api/v1/scout/complete
+     * Triggers SC-04 profile generation from the completed Scout assessment, sets
+     * student.currentStage to CADET, and returns a profile summary + redirect target.
+     * Closes the Scout stage permanently — cannot be called again once completed.
+     * Requires Layer 1, Layer 2, and (if applicable) Layer 3 to already be submitted.
+     */
+    @PostMapping("/complete")
+    public ResponseEntity<ScoutCompleteResponse> completeScout(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(scoutService.completeScout(userDetails.getUsername()));
+    }
+
     @ExceptionHandler(AlreadySubmittedException.class)
     public ResponseEntity<?> handleAlreadySubmitted(AlreadySubmittedException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT)

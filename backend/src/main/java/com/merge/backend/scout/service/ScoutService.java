@@ -9,4 +9,5 @@ public interface ScoutService {
     Layer2SubmitResponse submitLayer2(String studentEmail, Layer2SubmitRequest request);
     Layer3TaskResponse getLayer3Task(String studentEmail);
     Layer3SubmitResponse submitLayer3(String studentEmail, Layer3SubmitRequest request);
+    ScoutCompleteResponse completeScout(String studentEmail);
 }
